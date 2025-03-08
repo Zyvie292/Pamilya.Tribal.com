@@ -1,21 +1,40 @@
-# Use PHP with Apache
+# Use an official PHP image with Apache
 FROM php:8.2-apache
 
-# Enable mod_rewrite
+# Set up Apache VirtualHost
+RUN echo '<VirtualHost *:80> \
+    DocumentRoot /var/www/html/public \
+    <Directory /var/www/html/public> \
+        AllowOverride All \
+        Require all granted \
+    </Directory> \
+</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
+
+# Enable required Apache modules
 RUN a2enmod rewrite
 
-# Set correct document root
-WORKDIR /var/www/html
+# Set the correct document root to the public folder
+WORKDIR /var/www/html/public
 
-# Copy all files to container
+# Copy project files
 COPY . /var/www/html
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y unzip
+
+# Install Composer globally
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader --working-dir=/var/www/html
 
 # Set correct permissions
 RUN chown -R www-data:www-data /var/www/html
 RUN chmod -R 755 /var/www/html
 
-# Expose port 80
+# Expose port 80 for Apache
 EXPOSE 80
 
-# Start Apache
+# Start Apache in the foreground
 CMD ["apache2-foreground"]
+
