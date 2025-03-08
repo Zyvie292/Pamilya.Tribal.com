@@ -1,6 +1,7 @@
 <?php 
 session_start();
- include "Connection.php"; 
+require_once __DIR__ . '/../Connection.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -723,7 +724,7 @@ if (isset($_SESSION['message'])) {
   <!--
     - custom js link
   -->
-  <script src="./assets/js/script.js"></script>
+  <script src="/assets/js/script.js"></script>
 
   <!--
     - ionicon link
