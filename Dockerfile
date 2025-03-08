@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y unzip
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Install PHP dependencies
-RUN composer --working-dir=/var/www/html install --no-dev --optimize-autoloader
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --working-dir=/var/www/html
 
 # Set correct permissions
 RUN chown -R www-data:www-data /var/www/html
