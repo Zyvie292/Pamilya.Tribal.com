@@ -1,4 +1,24 @@
+# Enable mod_rewrite
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteRule ^(.*)$ public/$1 [L]
+
+    # Redirect all requests to the public folder
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ /public/$1 [L]
+
+    # Handle requests that are not actual files or directories
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Prevent direct access to sensitive files
+<FilesMatch "\.(env|json|config|sql|log|md|txt|sh|ini|bak)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Allow CORS (optional)
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin "*"
 </IfModule>
