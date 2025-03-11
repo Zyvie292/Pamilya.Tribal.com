@@ -30,14 +30,17 @@ RUN apt-get update && apt-get install -y \
     php-tokenizer \
     php-zip \
     php-curl \
+    && curl -sSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && echo "deb [arch=amd64] https://packages.microsoft.com/debian/10/prod buster main" > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 \
     && rm -rf /var/lib/apt/lists/*
 
-# Add Microsoft SQL Server ODBC Driver repository
-RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-    echo "deb [arch=amd64] https://packages.microsoft.com/debian/$(lsb_release -rs)/prod $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/mssql-release.list
+
 
 # Update packages
-RUN apt-get update
+RUN apt-get clean && apt-get update
+RUN apt-get update || apt-get update
 
 # Install Microsoft SQL Server ODBC Driver
 RUN apt-get install -y msodbcsql17
