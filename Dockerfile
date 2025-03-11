@@ -1,68 +1,47 @@
-# Use an official PHP image with Apache
+# Use PHP 8.2 with Apache
 FROM php:8.2-apache
 
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
-ENV ACCEPT_EULA=Y
-
-# Enable mod_rewrite for Apache
+# Enable Apache mod_rewrite
 RUN a2enmod rewrite
 
 # Set working directory
 WORKDIR /var/www/html
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Update package list and install required dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg2 \
     apt-transport-https \
+    ca-certificates \
     curl \
     unzip \
     software-properties-common \
-    lsb-release
-
-# Add Microsoft SQL Server package repository
-RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-    echo "deb [arch=amd64] https://packages.microsoft.com/debian/$(lsb_release -rs)/prod $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/mssql-release.list
-
-# Update package lists again
-RUN apt-get update
-
-# Install SQL Server drivers and PHP extensions
-RUN apt-get install -y \
-    msodbcsql17 \
+    unixodbc \
     unixodbc-dev \
-    libapache2-mod-php \
-    php-mbstring \
-    php-xml \
-    php-bcmath \
-    php-tokenizer \
-    php-zip \
-    php-cli \
-    php-curl && \
-    docker-php-ext-install pdo pdo_mysql && \
-    pecl install sqlsrv pdo_sqlsrv && \
-    docker-php-ext-enable sqlsrv pdo_sqlsrv
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Install PHP extensions using docker-php-ext-install
+RUN docker-php-ext-install mbstring xml bcmath tokenizer zip curl
 
-# Copy application files
-COPY . /var/www/html
+# Install Microsoft SQL Server drivers
+RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+    curl -sSL https://packages.microsoft.com/config/debian/12/prod.list | tee /etc/apt/sources.list.d/mssql-release.list && \
+    apt-get update && ACCEPT_EULA=Y apt-get install -y \
+    msodbcsql17 \
+    mssql-tools \
+    unixodbc-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Microsoft SQL Server PHP extensions
+RUN pecl install sqlsrv pdo_sqlsrv && docker-php-ext-enable sqlsrv pdo_sqlsrv
+
+# Copy project files
+COPY . .
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# Increase PHP memory limit
-RUN echo "memory_limit=-1" > /usr/local/etc/php/conf.d/custom.ini
-
-# Install PHP dependencies using Composer
-RUN composer clear-cache && composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --working-dir=/var/www/html
-
-# Fix Apache ServerName warning
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
-
 # Expose port
 EXPOSE 80
 
-# Start Apache
+# Start Apache server
 CMD ["apache2-foreground"]
