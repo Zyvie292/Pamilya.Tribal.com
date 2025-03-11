@@ -1,7 +1,7 @@
 # Use an official PHP image with Apache
 FROM php:8.2-apache
 
-# Set environment variables
+# Set environment variables to prevent interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 ENV ACCEPT_EULA=Y
 
@@ -11,7 +11,7 @@ RUN a2enmod rewrite
 # Set working directory
 WORKDIR /var/www/html
 
-# Install system dependencies
+# Install required system dependencies
 RUN apt-get update && apt-get install -y \
     gnupg2 \
     apt-transport-https \
@@ -30,25 +30,19 @@ RUN apt-get update && apt-get install -y \
     php-tokenizer \
     php-zip \
     php-curl \
-    && curl -sSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && echo "deb [arch=amd64] https://packages.microsoft.com/debian/10/prod buster main" > /etc/apt/sources.list.d/mssql-release.list \
-    && apt-get update \
-    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 \
     && rm -rf /var/lib/apt/lists/*
 
-
-
-# Update packages
-RUN apt-get clean && apt-get update
-RUN apt-get update || apt-get update
-
-# Install Microsoft SQL Server ODBC Driver
-RUN apt-get install -y msodbcsql17
+# Add Microsoft SQL Server ODBC Driver repository and install the driver
+RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+    echo "deb [arch=amd64] https://packages.microsoft.com/debian/10/prod buster main" > /etc/apt/sources.list.d/mssql-release.list && \
+    apt-get update && \
+    ACCEPT_EULA=Y apt-get install -y msodbcsql17 && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
 RUN docker-php-ext-install mbstring xml bcmath tokenizer zip curl pdo pdo_mysql
 
-# Install SQLSRV & PDO_SQLSRV PHP extensions
+# Install and enable SQLSRV & PDO_SQLSRV PHP extensions
 RUN pecl install sqlsrv pdo_sqlsrv && \
     docker-php-ext-enable sqlsrv pdo_sqlsrv
 
@@ -58,7 +52,7 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 # Copy application files
 COPY . /var/www/html
 
-# Set permissions
+# Set correct permissions
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
 # Increase PHP memory limit
@@ -68,9 +62,9 @@ RUN echo "memory_limit=-1" > /usr/local/etc/php/conf.d/custom.ini
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Install PHP dependencies using Composer
-RUN composer clear-cache && composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --working-dir=/var/www/html
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --working-dir=/var/www/html
 
-# Expose port
+# Expose port 80 for Apache
 EXPOSE 80
 
 # Start Apache
