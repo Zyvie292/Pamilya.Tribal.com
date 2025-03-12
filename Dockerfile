@@ -12,29 +12,17 @@ RUN a2enmod rewrite
 WORKDIR /var/www/html
 
 # Install required system dependencies
-RUN apt-get update && apt-get install -y \
-    gnupg2 \
-    apt-transport-https \
-    software-properties-common \
-    curl \
-    unzip \
-    lsb-release \
-    unixodbc \
-    unixodbc-dev \
-    libgssapi-krb5-2 \
-    libapache2-mod-php \
-    php-cli \
-    php-mbstring \
-    php-xml \
-    php-bcmath \
-    php-tokenizer \
-    php-zip \
-    php-curl \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gnupg2 apt-transport-https software-properties-common \
+    curl unzip lsb-release unixodbc unixodbc-dev \
+    libgssapi-krb5-2 libapache2-mod-php \
+    php-cli php-mbstring php-xml php-bcmath \
+    php-tokenizer php-zip php-curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Add Microsoft SQL Server ODBC Driver repository and install the driver
 RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-    echo "deb [arch=amd64] https://packages.microsoft.com/debian/10/prod buster main" > /etc/apt/sources.list.d/mssql-release.list && \
+    echo "deb [arch=amd64] https://packages.microsoft.com/debian/11/prod bullseye main" > /etc/apt/sources.list.d/mssql-release.list && \
     apt-get update && \
     ACCEPT_EULA=Y apt-get install -y msodbcsql17 && \
     rm -rf /var/lib/apt/lists/*
@@ -43,11 +31,11 @@ RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - 
 RUN docker-php-ext-install mbstring xml bcmath tokenizer zip curl pdo pdo_mysql
 
 # Install and enable SQLSRV & PDO_SQLSRV PHP extensions
-RUN pecl install sqlsrv pdo_sqlsrv && \
-    docker-php-ext-enable sqlsrv pdo_sqlsrv
+RUN pecl install sqlsrv pdo_sqlsrv && docker-php-ext-enable sqlsrv pdo_sqlsrv
 
-# Install Composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+# Install Composer securely
+RUN curl -sS https://getcomposer.org/installer | php && \
+    mv composer.phar /usr/local/bin/composer
 
 # Copy application files
 COPY . /var/www/html
