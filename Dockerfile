@@ -31,14 +31,19 @@ RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
     && apt-get update \
     && apt-get install -y msodbcsql18 mssql-tools18
 
-# Enable Apache rewrite module
-RUN a2enmod rewrite
-
-# Copy Apache virtual host configuration
+# Copy Apache configuration file
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
+
+# Enable site configuration and Apache modules
+RUN a2ensite 000-default \
+    && a2enmod rewrite
 
 # Copy application files to Apache root directory
 COPY . /var/www/html/
+
+# Set correct permissions
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 755 /var/www/html
 
 # Set working directory
 WORKDIR /var/www/html/
@@ -46,5 +51,5 @@ WORKDIR /var/www/html/
 # Expose port 80 for Apache
 EXPOSE 80
 
-# Restart Apache and Start Apache server
+# Start Apache in foreground
 CMD ["apachectl", "-D", "FOREGROUND"]
