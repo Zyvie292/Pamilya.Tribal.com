@@ -1,0 +1,16 @@
+services:
+  - name: my-php-app
+    type: web
+    runtime: docker
+    repo: https://github.com/Zyvie292/Pamilya.Tribal.com
+    region: Singapore (Southeast Asia)
+    envVars:
+      - key: DB_SERVER
+        value: "LAPTOP-4RR0GNSE\\SQLEXPRESS"
+      - key: DB_NAME
+        value: "ecommerceDB"
+      - key: DB_USER
+        value: "ZYVIE"
+      - key: DB_PASSWORD
+        sync: false
+    plan: free
