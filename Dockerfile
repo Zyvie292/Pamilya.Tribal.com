@@ -31,17 +31,11 @@ RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
     && apt-get update \
     && apt-get install -y msodbcsql18 mssql-tools18
 
-# Configure Apache to serve from /public directory
-RUN echo '<VirtualHost *:80> \
-    DocumentRoot /var/www/html/public \
-    <Directory /var/www/html/public> \
-        AllowOverride All \
-        Require all granted \
-    </Directory> \
-</VirtualHost>' > /etc/apache2/sites-available/000-default.conf
-
-# Enable Apache mods
+# Enable Apache rewrite module
 RUN a2enmod rewrite
+
+# Copy Apache virtual host configuration
+COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 
 # Copy application files to Apache root directory
 COPY . /var/www/html/
