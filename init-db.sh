@@ -1,0 +1,1 @@
+#!/bin/bashecho "Starting SQL Server..."/opt/mssql/bin/sqlservr &# Wait for SQL Server to startsleep 20echo "Importing database schema..."/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourStrongPassword123 -d master -i /var/www/html/database/database_schema.sqlecho "Database initialized successfully!"

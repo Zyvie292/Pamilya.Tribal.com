@@ -1,11 +1,22 @@
-# Use Ubuntu as base image
-FROM ubuntu:22.04
+# Use Ubuntu 20.04 as base image (MSSQL Server compatible)
+FROM ubuntu:20.04
 
-# Set environment variables
+# Install dependencies
+RUN apt-get update && apt-get install -y curl gnupg2 software-properties-common
+
+# Add Microsoft SQL Server repository
+RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+RUN add-apt-repository "$(curl -fsSL https://packages.microsoft.com/config/ubuntu/20.04/mssql-server-2019.list)"
+
+# Install Microsoft SQL Server
+RUN apt-get update && apt-get install -y mssql-server
+
+# Set environment variables for SQL Server
 ENV ACCEPT_EULA=Y
-ENV DEBIAN_FRONTEND=noninteractive
+ENV SA_PASSWORD=YourStrongPassword123
+ENV MSSQL_PID=Express
 
-# Update package list and install necessary packages
+# Install Apache, PHP, and Microsoft ODBC Driver
 RUN apt-get update && apt-get install -y \
     software-properties-common \
     apt-transport-https \
@@ -23,18 +34,14 @@ RUN apt-get update && apt-get install -y \
     php-odbc \
     php-mysqli \
     apache2 \
+    msodbcsql17 \
+    mssql-tools18 \
     && rm -rf /var/lib/apt/lists/*
-
-# Install Microsoft ODBC Driver for Ubuntu 22.04
-RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && add-apt-repository "$(curl -fsSL https://packages.microsoft.com/config/ubuntu/22.04/prod.list)" \
-    && apt-get update \
-    && apt-get install -y msodbcsql18 mssql-tools18
 
 # Copy Apache configuration file
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
 
-# Enable site configuration and Apache modules
+# Enable Apache modules
 RUN a2ensite 000-default \
     && a2enmod rewrite
 
@@ -51,5 +58,8 @@ WORKDIR /var/www/html/
 # Expose port 80 for Apache
 EXPOSE 80
 
-# Start Apache in foreground
-CMD ["apachectl", "-D", "FOREGROUND"]
+# Copy database initialization script
+COPY init-db.sh /init-db.sh
+RUN dos2unix /init-db.sh && chmod +x /init-db.sh
+# Start database and Apache server
+CMD /init-db.sh && apachectl -D FOREGROUND
