@@ -19,7 +19,7 @@ for i in {1..30}; do
 done
 
 # Check if SQL Server started successfully
-/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$SA_PASSWORD" -Q "SELECT 1" &> /dev/null
+/opt/mssql-tools/bin/sqlcmd -S mssql -U ZYVIE -P "$DB_PASSWORD" -Q "SELECT 1" &> /dev/null
 if [ $? -ne 0 ]; then
     echo "❌ ERROR: SQL Server did not start in time."
     exit 1
