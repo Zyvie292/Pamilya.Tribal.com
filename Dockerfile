@@ -1,4 +1,4 @@
-# Use a smaller base image to reduce memory usage
+# Use Ubuntu 20.04 as the base image
 FROM ubuntu:20.04
 
 # Set noninteractive mode to avoid prompts during installation
@@ -25,16 +25,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dos2unix && \
     rm -rf /var/lib/apt/lists/*  # Free up memory
 
-# Add Microsoft SQL Server repository and install required packages
-RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-    echo "deb [arch=amd64] https://packages.microsoft.com/ubuntu/20.04/prod focal main" > /etc/apt/sources.list.d/mssql-release.list && \
+# Add Microsoft SQL Server repository using the new method
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | tee /etc/apt/keyrings/microsoft.asc > /dev/null && \
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.asc] https://packages.microsoft.com/ubuntu/20.04/prod focal main" | tee /etc/apt/sources.list.d/mssql-release.list && \
     apt-get update && ACCEPT_EULA=Y apt-get install -y --no-install-recommends \
     mssql-server msodbcsql17 mssql-tools && \
     rm -rf /var/lib/apt/lists/*  # Free up memory
 
-# Set up environment variables
+# Set up environment variables for SQL Server
 ENV ACCEPT_EULA=Y
 ENV MSSQL_PID=Express
+ENV MSSQL_MEMORY_LIMIT_MB=256  # Adjust based on available memory
 
 # Copy Apache configuration
 COPY apache-config.conf /etc/apache2/sites-available/000-default.conf
@@ -57,10 +59,6 @@ EXPOSE 80
 # Copy and fix the database initialization script
 COPY init-db.sh /init-db.sh
 RUN dos2unix /init-db.sh && chmod +x /init-db.sh
-
-# Optimize memory usage by setting limits for SQL Server
-ENV MSSQL_MEMORY_LIMIT_MB=256  
-# Adjust based on available memory
 
 # Start database and Apache server
 CMD ["/bin/bash", "-c", "/init-db.sh && apachectl -D FOREGROUND"]
