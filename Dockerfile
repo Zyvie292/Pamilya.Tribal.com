@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dos2unix && \
     rm -rf /var/lib/apt/lists/*  # Free up memory
 
-# Add Microsoft SQL Server repository using the new method
+# Add Microsoft SQL Server repository (Fixed syntax issues)
 RUN mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | tee /etc/apt/keyrings/microsoft.asc > /dev/null && \
     echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.asc] https://packages.microsoft.com/ubuntu/20.04/prod focal main" | tee /etc/apt/sources.list.d/mssql-release.list && \
