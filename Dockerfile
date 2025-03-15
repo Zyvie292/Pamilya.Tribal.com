@@ -11,6 +11,9 @@ RUN apt-get update && apt-get install -y \
     unixodbc-dev \
     libgssapi-krb5-2
 
+# Fix broken package installation (Important)
+RUN apt --fix-broken install -y
+
 # Add Microsoft package repository
 RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
     curl -fsSL https://packages.microsoft.com/config/debian/11/prod.list | tee /etc/apt/sources.list.d/mssql-release.list && \
@@ -18,6 +21,9 @@ RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
 
 # Install Microsoft ODBC Driver and tools
 RUN ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools
+
+# Fix broken dependencies again (just in case)
+RUN apt --fix-broken install -y
 
 # Install SQLSRV and PDO_SQLSRV extensions for PHP
 RUN pecl install sqlsrv pdo_sqlsrv && docker-php-ext-enable sqlsrv pdo_sqlsrv
