@@ -1,25 +1,34 @@
 <?php
-// Load environment variables from .env file
-require_once __DIR__ . '/vendor/autoload.php'; // Required if using vlucas/phpdotenv
+require_once __DIR__ . '/vendor/autoload.php'; // Load Dotenv
 
 use Dotenv\Dotenv;
 
+// Load environment variables
 $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
-// Retrieve database credentials from .env
-$serverName = getenv('LAPTOP-4RR0GNSE\\SQLEXPRESS'); 
+// Retrieve DB credentials from .env
+$serverName = $_ENV['DB_HOST'] ?? 'localhost'; 
+$database = $_ENV['DB_NAME'] ?? '';
+$username = $_ENV['DB_USER'] ?? '';
+$password = $_ENV['DB_PASSWORD'] ?? '';
+
+// Debugging: Check if variables are loaded
+var_dump($database, $username, $password);
+
+// Connection options
 $connectionOptions = [
-    "Database" => getenv('ecommerceDB'),
-    "Uid" => getenv('ZYVIE'),
-    "PWD" => getenv('ZYVIE091298'),
-    "CharacterSet" => getenv('UTF-8')
+    "Database" => $database,
+    "Uid" => $username,
+    "PWD" => $password
 ];
 
-// Connect to SQL Server
+// Attempt to connect
 $conn = sqlsrv_connect($serverName, $connectionOptions);
 
 if ($conn === false) {
     die("❌ Database connection failed: " . print_r(sqlsrv_errors(), true));
+} else {
+    echo "✅ Connected successfully!";
 }
 ?>
