@@ -1,29 +1,32 @@
-# Use the official PHP 8.2 base image
+# Use the official PHP 8.2 CLI base image
 FROM php:8.2-cli
 
-# Install required dependencies
+# Update and install required dependencies
 RUN apt-get update && apt-get install -y \
     apt-transport-https \
-    lsb-release \
-    gnupg2 \
+    ca-certificates \
     curl \
+    gnupg \
+    lsb-release \
     unixodbc \
     unixodbc-dev \
     libgssapi-krb5-2
 
-# Fix broken package installation (Important)
+# Fix broken package installations (important)
 RUN apt --fix-broken install -y
 
-# Add Microsoft package repository
+# Add Microsoft's package signing key and repository
 RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-    curl -fsSL https://packages.microsoft.com/config/debian/11/prod.list | tee /etc/apt/sources.list.d/mssql-release.list && \
-    apt-get update
+    curl -fsSL https://packages.microsoft.com/config/debian/11/prod.list | tee /etc/apt/sources.list.d/mssql-release.list
 
-# Install Microsoft ODBC Driver and tools
+# Update package lists after adding the repository
+RUN apt-get update
+
+# Install Microsoft ODBC Driver 17 and tools
 RUN ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools
 
-# Fix broken dependencies again (just in case)
-RUN apt --fix-broken install -y
+# Ensure ODBC driver installation is successful
+RUN odbcinst -q -d
 
 # Install SQLSRV and PDO_SQLSRV extensions for PHP
 RUN pecl install sqlsrv pdo_sqlsrv && docker-php-ext-enable sqlsrv pdo_sqlsrv
